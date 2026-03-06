@@ -1,0 +1,79 @@
+# DeskMate Docker Compose Configuration
+#
+# Spins up all three microservices with proper networking:
+#   - rag-service (Python/FastAPI) on port 8000
+#   - orchestrator (Node.js/Express) on port 3001
+#   - frontend (React/Vite) on port 3000
+#
+# Services communicate via Docker's internal network using service names
+# as hostnames (e.g., orchestrator reaches RAG at http://rag-service:8000).
+
+version: "3.8"
+
+services:
+  # --------------------------------------------------------------------------
+  # Python RAG Service
+  # Handles document ingestion, embedding generation, and semantic search.
+  # Auto-ingests the IT Handbook on startup via lifecycle hook.
+  # --------------------------------------------------------------------------
+  rag-service:
+    build:
+      context: ./rag-service
+      dockerfile: Dockerfile
+    container_name: deskmate-rag
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount the data directory so the handbook is accessible inside the container
+      # WHY VOLUME MOUNT? This lets you edit IT_Handbook.txt on the host and
+      # re-ingest without rebuilding the container.
+      - ./data:/app/data:ro
+    environment:
+      - HANDBOOK_PATH=/app/data/IT_Handbook.txt
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/rag/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  # --------------------------------------------------------------------------
+  # TypeScript Orchestrator Service
+  # Parses user intent, calls RAG service and mock tools, assembles responses.
+  # --------------------------------------------------------------------------
+  orchestrator:
+    build:
+      context: ./orchestrator
+      dockerfile: Dockerfile
+    container_name: deskmate-orchestrator
+    ports:
+      - "3001:3001"
+    environment:
+      # Docker internal networking: services reference each other by service name
+      - RAG_SERVICE_URL=http://rag-service:8000
+      - PORT=3001
+      - NODE_ENV=production
+    depends_on:
+      rag-service:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # --------------------------------------------------------------------------
+  # React Frontend
+  # Serves the built React app as static files.
+  # --------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: deskmate-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      # In production/Docker, the frontend needs the full orchestrator URL
+      # since Vite's dev proxy isn't available in the production build.
+      - VITE_API_URL=http://localhost:3001
+    depends_on:
+      - orchestrator
+    restart: unless-stopped

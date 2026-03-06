@@ -1,0 +1,670 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+/* DeskMate Frontend - Cozy Minimalist Design System */
+
+:root {
+    /* Primary Color Palette - Soft, Warm & Muted */
+    --color-primary-100: #e2dbea;
+    --color-primary-200: #d1c5db;
+    --color-primary-400: #a895b6;
+    --color-primary-500: #8c769e;
+    /* Soft Mauve Muted */
+    --color-primary-600: #715b81;
+    --color-secondary-400: #b5a49c;
+    /* Soft warm greige/taupe */
+    --color-secondary-500: #9e8a80;
+
+    /* Background - Warm, Cozy Dark Gray/Brown */
+    --bg-base: #1f1d1e;
+
+    /* Soft Glassmorphism Surfaces */
+    --glass-surface: rgba(255, 255, 255, 0.02);
+    --glass-surface-hover: rgba(255, 255, 255, 0.04);
+    --glass-surface-solid: rgba(31, 29, 30, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.04);
+    --glass-border-highlight: rgba(255, 255, 255, 0.08);
+
+    /* Text */
+    --text-primary: #e8e4e1;
+    /* Warm off-white */
+    --text-secondary: #a49e9b;
+    /* Muted gray */
+    --text-muted: #746f6d;
+
+    /* Soft Accents */
+    --color-success: #88a183;
+    /* Muted Sage */
+    --color-success-bg: rgba(136, 161, 131, 0.15);
+    --color-error: #c48785;
+    /* Soft Rose/Terracotta */
+    --color-error-bg: rgba(196, 135, 133, 0.15);
+    --color-info: #85a2b5;
+    /* Muted Steel Blue */
+
+    /* Delicate Shadows (No Neon Glows) */
+    --shadow-soft: 0 16px 40px -10px rgba(0, 0, 0, 0.25);
+    --shadow-glass: 0 8px 32px -8px rgba(0, 0, 0, 0.15);
+    --glow-primary: 0 0 0 transparent;
+    /* Removed */
+    --glow-secondary: 0 0 0 transparent;
+    /* Removed */
+
+    /* Spacing */
+    --space-xs: 8px;
+    --space-sm: 12px;
+    --space-md: 20px;
+    --space-lg: 32px;
+    --space-xl: 48px;
+    --space-2xl: 72px;
+
+    /* Border Radius - Extra Soft/Rounded */
+    --radius-sm: 12px;
+    --radius-md: 20px;
+    --radius-lg: 28px;
+    --radius-xl: 36px;
+    --radius-full: 9999px;
+
+    /* Typography */
+    --font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'DM Mono', monospace;
+
+    /* Smooth, Lazy Transitions */
+    --transition-fast: 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
+    --transition-normal: 500ms cubic-bezier(0.25, 0.1, 0.25, 1);
+    --transition-bounce: 700ms cubic-bezier(0.25, 0.1, 0.1, 1);
+    /* Less bounce, more fluid */
+}
+
+/* ==========================================================================
+   Reset & Base Styles
+   ========================================================================== */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body,
+#root {
+    height: 100%;
+    width: 100%;
+}
+
+body {
+    font-family: var(--font-family);
+    font-size: 16px;
+    /* Slightly larger base size for readability */
+    line-height: 1.7;
+    color: var(--text-primary);
+    background-color: var(--bg-base);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden;
+}
+
+/* ==========================================================================
+   Dynamic Animated Background (Muted Cozy Gradient)
+   ========================================================================== */
+.ambient-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    overflow: hidden;
+    background: var(--bg-base);
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+}
+
+.ambient-blob {
+    display: none;
+}
+
+/* ==========================================================================
+   App Layout
+   ========================================================================== */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 900px;
+    /* Slightly narrower for coziness */
+    margin: 0 auto;
+    padding: 0 var(--space-lg);
+    position: relative;
+    z-index: 1;
+}
+
+/* ==========================================================================
+   Header
+   ========================================================================== */
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md) 0;
+    margin-top: var(--space-sm);
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.app-logo {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-lg);
+    background: var(--glass-surface-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    border: 1px solid var(--glass-border-highlight);
+    box-shadow: var(--shadow-glass);
+}
+
+.app-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.2px;
+}
+
+.app-subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-top: -2px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+}
+
+.employee-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-xs) var(--space-md);
+    background: var(--glass-surface);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-full);
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    transition: all var(--transition-normal);
+}
+
+.employee-badge:focus-within {
+    border-color: var(--color-primary-400);
+    background: var(--glass-surface-hover);
+}
+
+.employee-badge .badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-success);
+    opacity: 0.8;
+}
+
+.employee-input {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    width: 65px;
+    text-align: center;
+    outline: none;
+}
+
+/* ==========================================================================
+   Chat Area
+   ========================================================================== */
+.chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-xl) 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    scrollbar-width: none;
+    /* Hide scrollbar for a cleaner look */
+}
+
+.chat-area::-webkit-scrollbar {
+    display: none;
+}
+
+/* ==========================================================================
+   Chat Messages
+   ========================================================================== */
+.message {
+    display: flex;
+    gap: var(--space-md);
+}
+
+.message.user {
+    flex-direction: row-reverse;
+}
+
+.message-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-top: auto;
+    margin-bottom: 6px;
+    background: var(--glass-surface-hover);
+    border: 1px solid var(--glass-border);
+}
+
+.message.assistant .message-avatar {
+    color: var(--text-primary);
+}
+
+.message-content {
+    max-width: 82%;
+    padding: var(--space-md) var(--space-lg);
+    line-height: 1.7;
+    word-break: break-word;
+    font-size: 16px;
+    font-weight: 400;
+    box-shadow: var(--shadow-soft);
+}
+
+/* Assistant Bubble - Soft Glass */
+.message.assistant .message-content {
+    background: var(--glass-surface-solid);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl) var(--radius-xl) var(--radius-xl) 8px;
+    color: var(--text-primary);
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+}
+
+/* User Bubble - Muted Primary */
+.message.user .message-content {
+    background: var(--color-primary-600);
+    color: #fff;
+    border-radius: var(--radius-xl) var(--radius-xl) 8px var(--radius-xl);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.message-content strong {
+    font-weight: 700;
+    color: inherit;
+}
+
+.message.assistant .message-content strong {
+    color: var(--color-primary-200);
+}
+
+.message-content em {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.message.user .message-content em {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.message-content ul {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-sm) 0;
+}
+
+.message-content li {
+    padding: 4px 0 4px var(--space-lg);
+    position: relative;
+}
+
+.message-content li::before {
+    content: '—';
+    position: absolute;
+    left: 8px;
+    color: var(--color-secondary-400);
+}
+
+.message.user .message-content li::before {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* ==========================================================================
+   Agent Activity Indicator
+   ========================================================================== */
+.activity-indicator {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-sm) var(--space-lg);
+    border-radius: var(--radius-xl);
+    width: fit-content;
+    margin-left: 52px;
+    background: var(--glass-surface);
+    border: 1px solid transparent;
+}
+
+.activity-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--glass-border-highlight);
+    border-top-color: var(--text-secondary);
+    border-radius: 50%;
+    animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.activity-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* ==========================================================================
+   Debug Panel
+   ========================================================================== */
+.debug-toggle {
+    display: flex;
+    align-items: center;
+    margin-top: var(--space-sm);
+    margin-left: 52px;
+}
+
+.debug-toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-family: var(--font-mono);
+    padding: 4px 8px;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.debug-toggle-btn:hover,
+.debug-toggle-btn.active {
+    color: var(--text-secondary);
+}
+
+.debug-panel {
+    margin-top: var(--space-sm);
+    margin-left: 52px;
+    padding: var(--space-lg);
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.debug-panel pre {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* ==========================================================================
+   Input Area
+   ========================================================================== */
+.input-area {
+    flex-shrink: 0;
+    padding: var(--space-sm) 0 var(--space-md) 0;
+    position: relative;
+    z-index: 10;
+}
+
+.input-container {
+    display: flex;
+    gap: var(--space-md);
+    align-items: flex-end;
+    background: var(--bg-base);
+    /* Replaced glass to prevent blink */
+    border: 1px solid var(--glass-border-highlight);
+    border-radius: var(--radius-xl);
+    padding: var(--space-xs);
+    box-shadow: var(--shadow-soft);
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+}
+
+.input-container:focus-within {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(31, 29, 30, 0.95);
+}
+
+.input-wrapper {
+    flex: 1;
+    position: relative;
+    padding-left: var(--space-sm);
+}
+
+.chat-input {
+    width: 100%;
+    padding: 18px 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-family: var(--font-family);
+    font-size: 16px;
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+    min-height: 60px;
+    max-height: 150px;
+}
+
+.chat-input::placeholder {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.send-btn {
+    width: 44px;
+    height: 44px;
+    margin: 8px;
+    border-radius: 50%;
+    border: none;
+    background: var(--glass-surface-hover);
+    color: var(--text-secondary);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-normal);
+    flex-shrink: 0;
+}
+
+.send-btn:hover:not(:disabled) {
+    background: var(--color-primary-600);
+    color: #fff;
+    transform: scale(1.02);
+}
+
+.send-btn:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.send-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Welcome Screen
+   ========================================================================== */
+.welcome-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    text-align: center;
+    padding: var(--space-lg) 0 0 0;
+}
+
+.welcome-icon {
+    font-size: 40px;
+    background: var(--glass-surface);
+    width: 72px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--glass-border);
+}
+
+.welcome-text-container {
+    max-width: 500px;
+}
+
+.welcome-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--space-xs);
+    letter-spacing: -0.5px;
+}
+
+.welcome-subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 400;
+    line-height: 1.6;
+}
+
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-sm);
+    width: 100%;
+    max-width: 500px;
+    margin-top: var(--space-sm);
+}
+
+.quick-action {
+    padding: var(--space-md);
+    background: var(--glass-surface);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.quick-action:hover {
+    background: var(--glass-surface-hover);
+}
+
+.quick-action-icon {
+    font-size: 18px;
+    color: var(--text-secondary);
+}
+
+.quick-action-text {
+    font-family: var(--font-family);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* ==========================================================================
+   Tools & Metadata Badges
+   ========================================================================== */
+.response-metadata {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+    padding-top: var(--space-sm);
+}
+
+.metadata-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    background: var(--glass-surface-hover);
+    color: var(--text-secondary);
+}
+
+.badge-tool {
+    color: var(--color-success);
+}
+
+.badge-rag {
+    color: var(--color-secondary-400);
+}
+
+.badge-error {
+    color: var(--color-error);
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+@media (max-width: 768px) {
+    .app-container {
+        padding: 0 var(--space-md);
+    }
+
+    .message-content {
+        max-width: 90%;
+    }
+
+    .quick-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .header-right {
+        display: none;
+    }
+
+    .welcome-title {
+        font-size: 28px;
+    }
+
+    .welcome-icon {
+        width: 80px;
+        height: 80px;
+        font-size: 40px;
+    }
+}

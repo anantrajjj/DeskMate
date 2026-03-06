@@ -1,0 +1,115 @@
+Corporate IT Employee Handbook and Standard Operating Procedures (v4.2.0)
+
+Document Classification: Internal Use Only
+Last Updated: Q1 Current Year
+Compliance Scope: SOC 2 Type II, ISO 27001, GDPR
+
+1. Virtual Private Network (VPN) Setup, Policies, and Troubleshooting
+
+1.1 VPN Provisioning and Basic Setup
+All remote employees, contractors, and vendors must utilize the company-approved GlobalSecure VPN Client to access internal corporate network resources, staging environments, and secure intranet portals. The VPN client is managed via Mobile Device Management (MDM) and should be pre-installed on all corporate-issued Windows and macOS devices. Initial authentication requires your Unified Corporate Credentials (UCC) and a mandatory Multi-Factor Authentication (MFA) token generated via Microsoft Entra ID / Authenticator App.
+
+1.2 Common VPN Error Codes and Resolutions
+Error 691: Authentication failure. Verify your password has not expired and that your MFA token was accepted within the 30-second window.
+
+Error 809: L2TP/IPsec connection blocked. This typically indicates a local firewall or ISP blocking UDP ports 500 or 4500. Contact your ISP or switch to the alternative SSL VPN gateway (port 443) via the client settings.
+
+Error 412: Split-tunneling conflict. Ensure no local subnet overlaps with the corporate 10.x.x.x/8 routing space.
+
+1.3 Wi-Fi Transitioning and Disconnection Issues
+A highly documented edge case involves network handoffs. If your VPN keeps disconnecting when you switch to Wi-Fi from a hardwired Ethernet connection, or when roaming between different home mesh Wi-Fi access points, it is due to a dropped IKEv2 keep-alive packet. To resolve VPN disconnections on Wi-Fi:
+Step 1: Open the GlobalSecure VPN Client.
+Step 2: Navigate to Preferences > Network & Routing.
+Step 3: Check the box explicitly labeled "Enable Network Roaming Resiliency."
+Step 4: Lower the MTU size from 1500 to 1350 to prevent packet fragmentation over wireless protocols.
+Step 5: Apply settings and restart the client.
+
+If the VPN connects but internal hostnames fail to resolve, open your terminal or command prompt and execute ipconfig /flushdns (Windows) or sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder (macOS).
+
+2. Identity Management and Password Reset Policies
+
+2.1 Password Lifecycle and Expiration
+To maintain compliance with internal security audits, passwords must be reset every 90 days via the SSO portal. Automated notifications will be sent to your primary corporate email at 14, 7, 3, and 1 day(s) prior to expiration. If a password expires, the account enters a "Soft Lock" state. Soft-locked users can self-remediate using the Self-Service Password Reset (SSPR) portal by answering three security questions and verifying a push notification to their registered mobile device.
+
+2.2 Complexity Requirements
+All new passwords must meet the following cryptographic complexity standards:
+Minimum length of 16 characters.
+Must contain at least one uppercase letter, one lowercase letter, one numeric digit, and one special character (e.g., !@#$%^&*).
+Dictionary words, company names, and sequential patterns (e.g., 1234, abcd) are dynamically blocked by the Active Directory password filter.
+Password history is enforced: You cannot reuse any of your last 12 passwords.
+
+2.3 Account Lockout Protocols
+To defend against brute-force and credential-stuffing attacks, accounts will be temporarily locked for 45 minutes after six consecutive failed login attempts. The IT Help Desk cannot override a temporal lockout. However, if an account enters a "Hard Lock" state due to suspected compromised credentials or anomalous geographic login activity (e.g., a login attempt from two different countries within 1 hour), the user must call the Level 1 Service Desk directly and verify their identity via employee ID and direct manager confirmation before access is restored.
+
+3. Software Access Request Process and Entitlements
+
+3.1 Pre-Approved Software (Tier 1)
+Standard productivity applications are governed by role-based access control (RBAC) and automatically deployed to devices based on your department grouping in Active Directory. This includes Microsoft 365 E5 suite, Slack, Zoom, standard PDF readers, and endpoint security agents. Developers are automatically entitled to standard IDEs (VS Code) and terminal emulators.
+
+3.2 Premium and Specialized Software (Tier 2 & Tier 3)
+Access to specialized, licensed software is strictly controlled to manage operational expenditure (OpEx). All software requests exceeding $500/year require manager approval through ServiceNow. The software request workflow is as follows:
+Step 1: User navigates to the ServiceNow Software Catalog and submits a formal request, including a business justification.
+Step 2: For software under $500/year, automated approval is granted if the user's department has a surplus in their software budget allocation.
+Step 3: For software exceeding $500/year (e.g., Adobe Creative Suite, specialized CAD tools, advanced JetBrains IDEs, or premium cloud infrastructure tools), the ServiceNow ticket is automatically routed to the user's direct manager.
+Step 4: Upon manager approval, the ticket is routed to IT Procurement for license assignment.
+Step 5: If the requested software is not in the approved corporate catalog (Shadow IT prevention), it triggers a Tier 3 workflow. This requires a mandatory 10-day Security Architecture Review by the InfoSec team to evaluate data privacy, SOC compliance of the vendor, and integration safety before a procurement decision is made.
+
+4. Hardware Replacement Policy and Timelines
+
+4.1 Lifecycle Management
+The organization enforces a strict 36-month hardware refresh lifecycle for all primary laptops and desktop workstations to ensure optimal performance and security compliance. IT Asset Management (ITAM) monitors device lifecycles via the Jamf/Intune portals.
+
+Standard Issue: 14-inch enterprise laptop, 16GB RAM, 512GB SSD.
+Developer/Engineering Issue: 16-inch high-performance laptop, 32GB or 64GB RAM, 1TB NVMe SSD, discrete GPU. Upgrades from standard to engineering tiers require VP-level approval.
+
+4.2 Break/Fix and Accidental Damage
+In the event of hardware malfunction, battery swelling, or accidental damage (e.g., liquid spills, screen cracks), users must immediately submit a "Hardware Failure" ticket to the Service Desk.
+Regional Office Employees: Must bring the device to the walk-up IT Tech Bar. A hot-swap loaner device will be issued within 2 hours.
+Remote Employees: IT will dispatch a pre-imaged replacement device via overnight courier (FedEx/UPS Next Day Air). The employee must place the damaged asset in the provided return box, apply the prepaid shipping label, and drop it off within 5 business days. Failure to return the damaged asset will result in a payroll deduction equal to the depreciated value of the hardware.
+
+4.3 Lost or Stolen Devices
+Lost or stolen devices constitute a critical security incident. The employee must call the IT Emergency Hotline within 1 hour of discovering the loss. IT will instantly execute a remote "Brick and Wipe" command via MDM. The employee must also file a local police report and submit the case number to the HR and IT Risk departments within 48 hours.
+
+5. Acceptable Use Policy Excerpts and Data Handling
+
+5.1 Resource Utilization
+Company-provided endpoint devices, networks, cloud environments, and communication platforms are strictly for corporate business purposes. Occasional, incidental personal use (e.g., briefly checking personal webmail or reading news during a break) is permitted provided it does not violate security protocols, consume excessive bandwidth, or interfere with job duties.
+
+5.2 Data Exfiltration and Cloud Storage Restriction
+The use of unauthorized, third-party cloud storage solutions (e.g., personal Dropbox, iCloud Drive, personal Google Drive) on corporate endpoints is strictly prohibited and blocked at the firewall/proxy level. All corporate data must reside within the company-managed OneDrive, SharePoint, or designated AWS S3 buckets. Forwarding corporate emails or attachments to personal email addresses (e.g., Gmail, Yahoo) is a severe violation of the Data Loss Prevention (DLP) policy and will trigger an immediate alert to the Security Operations Center (SOC).
+
+5.3 Endpoint Modification Constraints
+Users are issued hardware with standard user privileges. Administrative access (Local Admin) is restricted. Employees must not attempt to bypass endpoint detection and response (EDR) software, disable local firewalls, alter registry keys, or attempt to root/jailbreak corporate-owned devices. Any attempt to tamper with security monitoring agents will result in immediate network quarantine of the device and disciplinary action.
+
+6. Support Escalation Matrix and SLA Targets
+The IT Service Desk operates a Follow-the-Sun ITIL-aligned support model. Tickets must be submitted via the ServiceNow portal, the internal Slack integration (#it-helpdesk), or the DeskMate AI Assistant.
+
+6.1 Priority Matrix Definitions
+Priority 1 (Critical): Complete business stoppage. Core systems (SSO, primary network, ERP, cloud infrastructure) are down affecting multiple users or external customers.
+Priority 2 (High): Significant business degradation. A critical service is severely impacted but a workaround exists, or a VIP/Executive user is completely blocked.
+Priority 3 (Medium): Standard operational issue. Single user impacted, no immediate threat to revenue or core operations (e.g., application crashing, local printer issue).
+Priority 4 (Low): Information request or standard service request (e.g., request for a new keyboard, inquiry about an upcoming software update).
+
+6.2 Escalation Tiers and Response SLAs
+L1 (Service Desk): First point of contact. Handles password resets, basic access, VPN setup, and general inquiries.
+SLA: 15-minute response for P1/P2; 4-hour response for P3/P4.
+Target Resolution: 24 business hours.
+
+L2 (Desktop/Application Support): Advanced troubleshooting, log analysis, local network issues, and specialized software configuration. Tickets are escalated to L2 if L1 cannot resolve within 2 hours of active troubleshooting.
+SLA: 2-hour response.
+Target Resolution: 48 business hours.
+
+L3 (Infrastructure/Network/Cloud Engineering): Core infrastructure routing, backend database administration, firewall rule modifications, and cloud architecture bugs.
+SLA: Immediate escalation for P1.
+Target Resolution: Dependent on RCA (Root Cause Analysis).
+
+7. Remote Work IT Guidelines
+
+7.1 Home Network Security Requirements
+Remote employees must ensure their home network environments do not compromise corporate security. Wireless routers must use WPA2-AES or WPA3 encryption protocols; WEP and open networks are strictly forbidden. Employees must change the default administrator password on their home ISP routers and disable Universal Plug and Play (UPnP) to prevent unauthorized port forwarding.
+
+7.2 Bandwidth and Connectivity
+Remote workers are expected to maintain a stable broadband internet connection capable of supporting continuous VOIP and video conferencing. The minimum recommended bandwidth is 50 Mbps download and 15 Mbps upload. If a user experiences persistent connectivity issues, IT will require a hardwired Ethernet connection directly to the router to isolate Wi-Fi interference before investigating application-level latency.
+
+7.3 Mandatory Connectivity Syncs
+To ensure the rapid deployment of zero-day vulnerability patches, antivirus definition updates, and critical group policy refreshes, all remote devices must establish an active VPN connection to the corporate network for a minimum of 4 continuous hours every 14 days. If a device fails to communicate with the internal update servers for 30 consecutive days, its MDM certificate will automatically revoke, requiring the user to physically return the device to a corporate office for manual un-quarantining and reimaging.

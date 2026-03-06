@@ -1,0 +1,58 @@
+# Dependency directories (Common)
+node_modules/
+jspm_packages/
+venv/
+.venv/
+env/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+bin/
+obj/
+tsbuildinfo
+
+# Python cache and metadata
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local configuration / IDEs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+.DS_Store
+Thumbs.db
+
+# DeskMate Specific: RAG Outputs
+*.faiss
+*.pkl
+index.faiss
+index.pkl
+test_chunking_out.txt
+
+# Artifacts & Temporary Files
+tmp/
+.gemini/
+brain/
