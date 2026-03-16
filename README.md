@@ -1,6 +1,6 @@
 # DeskMate — AI IT Help Desk Assistant
 
-A dual-language, microservices-based AI IT Help Desk Assistant that combines a **Python RAG service** (FastAPI + FAISS) with a **TypeScript orchestration layer** (Express + custom intent parsing) and a **React frontend**.
+A dual-language, microservices-based AI IT Help Desk Assistant that combines a **Python RAG service** (FastAPI + NumPy vector search) with a **TypeScript orchestration layer** (Express + custom intent parsing + **Groq LLM synthesis**) and a **React frontend**.
 
 ![Architecture](https://img.shields.io/badge/Architecture-Microservices-blue)
 ![Python](https://img.shields.io/badge/Python-3.10+-green)
@@ -20,8 +20,8 @@ A dual-language, microservices-based AI IT Help Desk Assistant that combines a *
 │            │     │                  │     │                │
 │  • Chat UI │     │  • Intent Parse  │     │  • Ingest      │
 │  • Debug   │     │  • Tool Calls    │     │  • Embed       │
-│  • Activity│     │  • RAG Query     │     │  • FAISS Search│
-│            │     │  • Response Asm  │     │                │
+│  • Activity│     │  • RAG Query     │     │  • Vector Srch │
+│            │     │  • LLM Synthesis │     │                │
 └────────────┘     └──────────────────┘     └────────────────┘
                            │
                      ┌─────┴─────┐
@@ -41,8 +41,9 @@ A dual-language, microservices-based AI IT Help Desk Assistant that combines a *
    - Calls **RAG Service** for IT policy knowledge queries.
    - Calls **Mock Tools** for ticket management or entitlement checks.
    - Performs **multi-step reasoning** (e.g., check entitlement → then query RAG for how to request access).
-4. Response is assembled with `answer`, `tools_invoked`, `rag_context`, and `errors`.
-5. **Frontend** renders the response with activity indicators and debug trace toggle.
+4. **LLM Synthesis** (Groq / Llama 3.3 70B) composes a natural-language answer from the gathered RAG chunks and tool outputs.
+5. Response is returned with `answer`, `tools_invoked`, `rag_context`, and `errors`.
+6. **Frontend** renders the response with activity indicators and debug trace toggle.
 
 ---
 
@@ -52,11 +53,14 @@ A dual-language, microservices-based AI IT Help Desk Assistant that combines a *
 
 - **Docker & Docker Compose** (recommended)
 - OR: **Node.js 18+**, **Python 3.10+**, **pip**
+- **Groq API Key** (free at [console.groq.com](https://console.groq.com)) — for LLM-powered responses
 
 ### Option 1: Docker Compose (Recommended)
 
 ```bash
 cd deskmate
+cp .env.example .env
+# Edit .env and set your GROQ_API_KEY
 docker-compose up --build
 ```
 
@@ -91,6 +95,13 @@ export HANDBOOK_PATH=../data/IT_Handbook.txt
 ```bash
 cd orchestrator
 npm install
+
+# Set Groq API key (enables LLM synthesis; without it, template responses are used)
+# Windows PowerShell:
+$env:GROQ_API_KEY="gsk_your_key_here"
+# Linux/macOS:
+export GROQ_API_KEY=gsk_your_key_here
+
 npm run dev
 ```
 
@@ -135,7 +146,7 @@ curl -X POST http://localhost:3001/api/chat \
 ```json
 {
   "requestId": "abc-123",
-  "answer": "**From the IT Handbook:**\n\nAll corporate passwords must...",
+  "answer": "**Resetting Your Password**\n\nTo reset your password, you can use the Self-Service Password Reset Portal at https://password.acme-corp.internal...",
   "tools_invoked": [],
   "rag_context": [
     { "chunk": "All corporate passwords must...", "score": 0.4231, "index": 1 }
@@ -155,14 +166,15 @@ curl -X POST http://localhost:3001/api/chat \
 ### Our Implementation
 
 1. **Ingestion**: `IT_Handbook.txt` is split into chunks using paragraph-based splitting with **1000-char** limit and **100-char** overlap. Special regex `(?<=[.!?\n])\s+` ensures bullet points and newlines are preserved.
-2. **Embedding**: Each chunk is converted to a 128-dimensional vector using a deterministic hash-based embedding function (mock — no API keys needed).
-3. **Indexing**: Embeddings are stored in a FAISS IndexFlatIP index for cosine similarity search.
+2. **Embedding**: Each chunk is converted to a 384-dimensional vector using a deterministic hash-based embedding function (mock — no API keys needed).
+3. **Indexing**: Embeddings are stored in a NumPy matrix for brute-force cosine similarity search (inner product on L2-normalized vectors).
 4. **Retrieval**: User queries are embedded with the same function and searched against the index.
 5. **Response**: Top-K results are returned with similarity scores to the orchestrator.
+6. **LLM Synthesis**: The orchestrator passes the retrieved chunks and tool outputs to **Groq (Llama 3.3 70B)** to compose a natural-language answer.
 
 ### Mock Embeddings
 
-The embedding function uses SHA-256 hashing of word n-grams (unigrams + bigrams) distributed across 128 dimensions. While this doesn't capture true semantic meaning like transformer-based models, it provides deterministic, consistent embeddings that demonstrate the full RAG pipeline without API dependencies.
+The embedding function uses MD5 hashing of word n-grams (unigrams + bigrams) with random indexing across 384 dimensions. While this doesn't capture true semantic meaning like transformer-based models, it provides deterministic, consistent embeddings that demonstrate the full RAG pipeline without API dependencies.
 
 **To use real embeddings**, replace `generate_embedding()` in `rag-service/app/embeddings.py` with a call to OpenAI, Sentence Transformers, or Cohere.
 
@@ -179,6 +191,7 @@ The embedding function uses SHA-256 hashing of word n-grams (unigrams + bigrams)
 | Internal server error       | 500 with generic message; full error logged in structured JSON          |
 | RAG not ingested            | 400 error suggesting to call `/rag/ingest`                              |
 | Compound multi-step query   | Sequential RAG → ticket check → conditional create; no duplicates       |
+| LLM unavailable / no key    | Graceful fallback to template-based answers; app always works           |
 
 ---
 
@@ -195,6 +208,7 @@ The embedding function uses SHA-256 hashing of word n-grams (unigrams + bigrams)
 | `RAG_SERVICE_URL`  | `http://localhost:8000`   | URL of the RAG service           |
 | `PORT`             | `3001`                    | Orchestrator server port         |
 | `NODE_ENV`         | `development`             | Environment mode                 |
+| `GROQ_API_KEY`     | _(none)_                  | Groq API key for LLM synthesis (free at [console.groq.com](https://console.groq.com)) |
 
 ### Frontend
 | Variable         | Default   | Description                                |
@@ -220,6 +234,7 @@ deskmate/
 │   ├── src/
 │   │   ├── index.ts            # Express server & endpoints
 │   │   ├── orchestrator.ts     # Intent parsing & multi-step reasoning
+│   │   ├── llmClient.ts        # Groq LLM client (OpenAI SDK) with fallback
 │   │   ├── tools.ts            # Mock IT tools (tickets, entitlements)
 │   │   ├── ragClient.ts        # RAG service HTTP client
 │   │   └── logger.ts           # Structured JSON logger
@@ -229,15 +244,16 @@ deskmate/
 │   ├── app/
 │   │   ├── main.py             # FastAPI endpoints & lifecycle
 │   │   ├── embeddings.py       # Mock embedding function
-│   │   ├── vector_store.py     # FAISS vector store wrapper
+│   │   ├── vector_store.py     # NumPy vector store (brute-force cosine similarity)
 │   │   └── chunking.py         # Text chunking logic
 │   ├── Dockerfile
 │   └── requirements.txt
 ├── data/
 │   └── IT_Handbook.txt         # IT policy knowledge base (18 sections)
 ├── docker-compose.yml          # Multi-service orchestration
+├── .env.example                # Environment variable template
 ├── README.md                   # This file
-├── DECISIONS.md                # Technical decision documentation
+├── DECISIONS.md                # Technical decision documentation (6 decisions)
 └── production_architecture.md  # Azure Production Migration Strategy
 ```
 
@@ -251,14 +267,14 @@ Try these in the chat to exercise different features:
 
 | Query                                      | Expected Behavior                           |
 |--------------------------------------------|---------------------------------------------|
-| "How do I reset my password?"              | RAG search → password policy from handbook  |
-| "Show my tickets"                          | Tool call → getEmployeeTickets              |
-| "Create a ticket about VPN issues"         | Tool call → createSupportTicket             |
-| "Do I have access to Adobe Photoshop?"     | Tool call → checkSoftwareEntitlement        |
-| "How do I get Photoshop?"                  | Multi-step: entitlement check + RAG query   |
+| "How do I reset my password?"              | RAG search → LLM synthesis → natural answer |
+| "Show my tickets"                          | Tool call → LLM synthesis → ticket summary  |
+| "Create a ticket about VPN issues"         | Tool call → LLM synthesis → confirmation    |
+| "Do I have access to Adobe Photoshop?"     | Tool call → LLM synthesis → entitlement info|
+| "How do I get Photoshop?"                  | Multi-step: entitlement + RAG → LLM answer  |
 | "Hello"                                    | Greeting response with capability list      |
 | "What's the weather?"                      | Out-of-scope: polite IT redirect            |
-| _(spec showcase)_ "My VPN keeps disconnecting... check tickets... create one" | Compound: RAG + ticket check + conditional create |
+| _(spec showcase)_ "My VPN keeps disconnecting... check tickets... create one" | Compound: RAG + ticket check + conditional create → LLM synthesis |
 
 ### Test Mock Employee IDs
 

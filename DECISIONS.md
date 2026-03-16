@@ -95,3 +95,25 @@ This document captures **five non-obvious technical decisions** made during the 
 **Trade-off**: We need to anticipate multi-step flows at design time and create dedicated intents for them. If a new multi-step flow is needed (e.g., "Create a ticket about my VPN issue" → check existing VPN tickets first → create if none exist), we'd need to add a new intent handler. An LLM-based agent could compose these steps dynamically.
 
 **Why Not a Full Agent Loop?**: A reasoning loop like ReAct (Reason → Act → Observe → Repeat) requires an LLM to decide the next action. Without an LLM, we'd need to build a rule-based state machine that quickly becomes unmaintainable. The explicit handler approach is a pragmatic middle ground: it demonstrates multi-step reasoning while remaining deterministic and debuggable.
+
+---
+
+## Decision 6: Hybrid Architecture — Deterministic Routing + LLM Synthesis
+
+**Context**: The initial design used template-based response generation (hardcoded strings and raw RAG chunk pasting). This functioned as a search engine with a chat wrapper, not a conversational AI agent. The system needed real LLM-powered response synthesis.
+
+**Decision**: Use a **hybrid architecture** — keep the deterministic keyword-based intent parser for routing, but add an LLM synthesis step at the end of the orchestration pipeline to compose natural-language answers from the gathered context (RAG chunks + tool outputs).
+
+**Reasoning**:
+- **Separation of concerns**: Intent parsing (fast, deterministic, no API cost) is separate from response generation (LLM-powered, natural language). Each can be upgraded independently.
+- **Groq via OpenAI SDK**: We use the `openai` npm package pointed at Groq's API (`https://api.groq.com/openai/v1`). Groq offers free-tier access and extremely fast inference (~200ms). The OpenAI-compatible SDK means swapping to OpenAI, Anthropic, or Ollama requires only changing `baseURL` and `apiKey`.
+- **Context injection**: The LLM receives a structured prompt containing the user's question, detected intent, all retrieved RAG chunks, and all tool results. It synthesizes a coherent, natural response grounded in this context.
+- **Graceful fallback**: If `GROQ_API_KEY` is not set or the LLM call fails, the system returns the template-based answers from the original implementation. The app always works — LLM enhances but is not required.
+- **Selective synthesis**: Greeting and out-of-scope intents skip the LLM (no need to synthesize static responses), saving API calls and latency.
+
+**Trade-off**: Adding an LLM call introduces latency (~200-1500ms) and an external dependency. The graceful fallback mitigates the reliability risk. For latency, Groq's LPU hardware keeps generation under 500ms for typical responses.
+
+**Alternatives Considered**:
+- **Full LLM agent (LangChain/Mastra)**: Would replace both intent parsing AND response generation with LLM calls. More flexible but slower (multiple LLM round-trips for routing decisions) and less predictable for a demo.
+- **Ollama (fully local)**: No API key needed, but requires local GPU resources and model download. Not practical for a portable demo.
+- **OpenAI GPT-4**: Higher quality but more expensive, no free tier for sustained usage.
