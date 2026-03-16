@@ -5,14 +5,14 @@
  * and orchestrates multi-step responses by combining:
  *   - RAG lookups (for IT policy/procedure questions)
  *   - Tool calls (for ticket management and entitlement checks)
- *   - Template-based response generation
+ *   - LLM-powered response synthesis (Groq / OpenAI-compatible)
  *
- * WHY NOT USE AN LLM FOR INTENT PARSING?
- * This project is designed to run with no API keys. Instead of calling GPT/Claude
- * for intent classification, we use a keyword-based intent parser. In production,
- * you would swap `parseIntent()` with an LLM call via LangChain. The rest of the
- * orchestration pipeline (tool selection, RAG querying, response assembly) would
- * remain identical.
+ * WHY KEYWORD-BASED INTENT PARSING?
+ * We use a fast, deterministic keyword parser for intent classification rather than
+ * an LLM call. This keeps routing instant and predictable. The LLM is used in the
+ * final step to synthesize a natural-language answer from the gathered context
+ * (RAG chunks + tool outputs). This hybrid approach gives us the best of both:
+ * deterministic routing with LLM-quality responses.
  *
  * MULTI-STEP REASONING FLOW:
  *   1. Parse user intent from the message
@@ -30,6 +30,7 @@ import {
     Ticket,
 } from "./tools";
 import { queryRAG, RAGQueryResult } from "./ragClient";
+import { synthesizeAnswer, isLLMConfigured } from "./llmClient";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -450,6 +451,44 @@ export async function orchestrate(request: ChatRequest): Promise<{
                         "Could you rephrase your question?";
                 }
                 break;
+        }
+
+        // ---------------------------------------------------------------------
+        // LLM Synthesis Step
+        // After all tools/RAG calls complete and a template answer is built,
+        // pass everything to the LLM to compose a natural-language response.
+        // Greeting and out-of-scope intents skip LLM (no synthesis needed).
+        // Falls back to template answer if LLM is unconfigured or fails.
+        // ---------------------------------------------------------------------
+        if (
+            isLLMConfigured() &&
+            answer &&
+            intentResult.intent !== "greeting" &&
+            intentResult.intent !== "out_of_scope"
+        ) {
+            const llmStart = Date.now();
+            const synthesized = await synthesizeAnswer({
+                userMessage: request.message,
+                intent: intentResult.intent,
+                ragChunks: ragContext,
+                toolResults: toolsInvoked,
+                fallbackAnswer: answer,
+            });
+            const llmLatency = Date.now() - llmStart;
+
+            debugSteps.push({
+                step: ++stepCounter,
+                action: "llm_synthesis",
+                input: {
+                    model: "llama-3.3-70b-versatile",
+                    contextChunks: ragContext.length,
+                    toolResults: toolsInvoked.length,
+                },
+                output: { synthesized: synthesized !== answer },
+                latencyMs: llmLatency,
+            });
+
+            answer = synthesized;
         }
     } catch (error) {
         const errMsg = `Orchestration error: ${(error as Error).message}`;
