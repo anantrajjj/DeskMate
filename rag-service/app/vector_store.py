@@ -1,24 +1,29 @@
 """
-Vector Store Module - FAISS-backed in-memory vector storage.
+Vector Store Module - In-memory vector storage with NumPy-based similarity search.
 
-WHY FAISS?
-----------
-FAISS (Facebook AI Similarity Search) is the industry standard for efficient
-similarity search on dense vectors. Even though we're using mock embeddings,
-FAISS gives us:
-  1. Sub-millisecond search on small datasets (our IT handbook).
-  2. The exact same API we'd use in production with real embeddings.
-  3. Inner product search (IndexFlatIP) on L2-normalized vectors = cosine
-     similarity, which is the standard metric for text similarity.
+This module provides semantic search over document embeddings using brute-force
+cosine similarity (via inner product on L2-normalized vectors).
+
+WHY NUMPY INSTEAD OF FAISS?
+----------------------------
+FAISS (Facebook AI Similarity Search) is the industry standard for large-scale
+vector search. However, on some Windows environments, `import faiss` hangs
+indefinitely due to MKL/PyTorch dependency conflicts.
+
+For our small dataset (~18-25 chunks from the IT Handbook), pure-NumPy
+brute-force search completes in <1ms and is functionally identical to
+FAISS IndexFlatIP. This makes the service portable and dependency-light.
+
+TO UPGRADE TO FAISS:
+  Replace the NumPy dot-product in `search()` with a FAISS IndexFlatIP.
+  The API remains identical.
 
 WHY IN-MEMORY vs. PERSISTENT?
   This is a demonstration project. In production, you'd use FAISS with
   on-disk indices or migrate to a managed vector DB (Pinecone, Weaviate,
-  Qdrant). In-memory is simpler, faster, and sufficient for our ~18-chunk
-  dataset.
+  Qdrant). In-memory is simpler, faster, and sufficient for our dataset.
 """
 
-import faiss
 import numpy as np
 from typing import Optional
 from app.embeddings import EMBEDDING_DIM
@@ -26,7 +31,7 @@ from app.embeddings import EMBEDDING_DIM
 
 class VectorStore:
     """
-    In-memory FAISS vector store with metadata tracking.
+    In-memory vector store using NumPy for brute-force similarity search.
 
     Stores document chunks alongside their embeddings and allows
     efficient similarity search via inner product (cosine similarity
@@ -34,18 +39,13 @@ class VectorStore:
     """
 
     def __init__(self):
-        # WHY IndexFlatIP?
-        # Flat = brute-force (exact search, no approximation).
-        # IP = Inner Product. On L2-normalized vectors, IP == cosine similarity.
-        # For small datasets (<10K vectors), flat indices are fast enough and
-        # give exact results. IVF/HNSW indices are for million-scale datasets.
-        self.index: Optional[faiss.IndexFlatIP] = None
+        self.embeddings: Optional[np.ndarray] = None
         self.chunks: list[str] = []
         self.is_initialized: bool = False
 
     def build_index(self, chunks: list[str], embeddings: np.ndarray) -> int:
         """
-        Build the FAISS index from pre-computed embeddings.
+        Store chunks and their embeddings for later search.
 
         Args:
             chunks: List of text chunks corresponding to the embeddings.
@@ -60,9 +60,7 @@ class VectorStore:
             f"got {embeddings.shape[1]}"
         )
 
-        # Create a fresh index each time (idempotent re-ingestion)
-        self.index = faiss.IndexFlatIP(EMBEDDING_DIM)
-        self.index.add(embeddings)
+        self.embeddings = embeddings.astype(np.float32)
         self.chunks = chunks
         self.is_initialized = True
         return len(chunks)
@@ -70,6 +68,9 @@ class VectorStore:
     def search(self, query_embedding: np.ndarray, top_k: int = 3) -> list[dict]:
         """
         Search for the most similar chunks to the query embedding.
+
+        Uses brute-force inner product (equivalent to cosine similarity
+        on L2-normalized vectors).
 
         Args:
             query_embedding: 1D numpy array of shape (EMBEDDING_DIM,).
@@ -79,30 +80,25 @@ class VectorStore:
             List of dicts with keys: 'chunk', 'score', 'index'.
             Sorted by descending similarity score.
         """
-        if not self.is_initialized or self.index is None:
+        if not self.is_initialized or self.embeddings is None:
             raise RuntimeError(
                 "Vector store is not initialized. Call /rag/ingest first."
             )
 
-        # FAISS expects a 2D array for queries
-        query_2d = query_embedding.reshape(1, -1)
+        # Compute inner product scores (cosine sim for L2-normalized vectors)
+        query_2d = query_embedding.reshape(1, -1).astype(np.float32)
+        scores = np.dot(self.embeddings, query_2d.T).flatten()
 
-        # Clamp top_k to the number of stored chunks
+        # Get top-k indices sorted by descending score
         effective_k = min(top_k, len(self.chunks))
-
-        # Search returns (distances, indices) arrays
-        scores, indices = self.index.search(query_2d, effective_k)
+        top_indices = np.argsort(scores)[::-1][:effective_k]
 
         results = []
-        for i in range(effective_k):
-            idx = int(indices[0][i])
-            if idx < 0:
-                # FAISS returns -1 for missing results in some edge cases
-                continue
+        for idx in top_indices:
             results.append({
-                "chunk": self.chunks[idx],
-                "score": float(scores[0][i]),
-                "index": idx,
+                "chunk": self.chunks[int(idx)],
+                "score": float(scores[int(idx)]),
+                "index": int(idx),
             })
 
         return results
@@ -113,7 +109,7 @@ class VectorStore:
             "is_initialized": self.is_initialized,
             "total_chunks": len(self.chunks) if self.is_initialized else 0,
             "embedding_dimension": EMBEDDING_DIM,
-            "index_type": "IndexFlatIP (Cosine Similarity via Inner Product)",
+            "index_type": "NumPy Brute-Force (Cosine Similarity via Inner Product)",
         }
 
 
