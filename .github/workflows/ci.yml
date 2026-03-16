@@ -37,7 +37,7 @@ jobs:
       - working-directory: ./orchestrator
         run: |
           npm ci
-          npm run build || true # Allow it to fail during the demo session
+          npm run build
 
   # Check the RAG service Python linting
   rag-service:
