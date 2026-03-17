@@ -22,7 +22,9 @@ import { checkRAGHealth } from "./ragClient";
 import { logJson } from "./logger";
 
 const app = express();
-const PORT = parseInt(process.env.PORT || "3001", 10);
+// Hardcode to 3001. Azure Container Apps injects PORT=80 which causes
+// a mismatch with the expected Ingress Target Port (3001) causing crash loops.
+const PORT = 3001;
 
 // ---------------------------------------------------------------------------
 // Middleware
