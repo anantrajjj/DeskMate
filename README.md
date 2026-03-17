@@ -10,10 +10,7 @@ A dual-language, microservices-based AI IT Help Desk Assistant that combines a *
 
 ## 🌐 Live Demo
 
-- **Frontend (Web UI)**: [https://jolly-coast-0d2add31e.5.azurestaticapps.net](https://jolly-coast-0d2add31e.5.azurestaticapps.net)
-- **Orchestrator API**: [https://orchestrator.salmonwave-cfcd5e54.westus2.azurecontainerapps.io](https://orchestrator.salmonwave-cfcd5e54.westus2.azurecontainerapps.io)
-- **RAG Service (Internal)**: `rag-service.internal.salmonwave-cfcd5e54.westus2.azurecontainerapps.io`
-
+- **Frontend (Web UI)**: [https://jolly-coast-0d2add31e.4.azurestaticapps.net/](https://jolly-coast-0d2add31e.4.azurestaticapps.net/)
 ---
 
 ## 🏗️ Architecture Overview
