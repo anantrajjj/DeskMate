@@ -1,6 +1,6 @@
 # Technical Decisions — DeskMate
 
-This document captures **five non-obvious technical decisions** made during the development of DeskMate, explaining the reasoning, trade-offs, and alternatives considered.
+This document captures **seven non-obvious technical decisions** made during the development of DeskMate, explaining the reasoning, trade-offs, and alternatives considered.
 
 ---
 
@@ -117,3 +117,21 @@ This document captures **five non-obvious technical decisions** made during the 
 - **Full LLM agent (LangChain/Mastra)**: Would replace both intent parsing AND response generation with LLM calls. More flexible but slower (multiple LLM round-trips for routing decisions) and less predictable for a demo.
 - **Ollama (fully local)**: No API key needed, but requires local GPU resources and model download. Not practical for a portable demo.
 - **OpenAI GPT-4**: Higher quality but more expensive, no free tier for sustained usage.
+
+---
+
+## Decision 7: Production Hardening via Docker-Based Azure Deployment
+
+**Context**: Moving to Azure Container Apps (ACA) using the default "Code" build type caused several issues: both backends were misidentified as Python 3.11 apps (causing "ModuleNotFoundError" in the Node.js orchestrator), and the RAG handbook was missing from the container because it was located outside the `rag-service` folder.
+
+**Decision**: Switch from "Code-based" deployment to **"Docker Container" build type** in Azure and **internalize the RAG data pool** within the service's build context.
+
+**Reasoning**:
+- **Execution Consistency**: Forcing Azure to use our `Dockerfile` (Build type: Docker Container) ensures the Node.js Orchestrator is built as a Node.js image and the RAG Service as a Python image, preventing "Guessing" errors.
+- **Auto-Initialization**: By copying `IT_Handbook.txt` into `rag-service/data/` *before* the build, it is bundled into the final production image. This allows the service to auto-ingest the knowledge base on startup, resolving the "Vector store not initialized" error without manual manual ingestion calls.
+- **Port Synchronization**: Hardcoding the container PORT to `3001` (Orchestrator) and `8000` (RAG) to match the Azure Ingress "Target Port" resolves the "Activation failed" errors caused by Azure's default port 80 injection.
+- **Secure Internal Routing**: Using `.internal.` URLs for the RAG service URL (configured in ACA Environment settings) keeps knowledge traffic within the Azure private network, improving security and reducing latency compared to public endpoint routing.
+
+**Trade-off**: Bundling the handbook into the image makes the image slightly larger and requires a full rebuild/deploy to update the knowledge base. However, for a stable set of IT policies, this is significantly more robust than managing external volume mounts or manual ingestion triggers in a serverless environment.
+
+**Alternative Considered**: Using Azure Blob Storage or a managed Vector DB (like Cosmos DB with Vector Search). This would be better for a 100GB knowledge base but adds significant cost and setup overhead for this project's requirements.

@@ -6,6 +6,13 @@ A dual-language, microservices-based AI IT Help Desk Assistant that combines a *
 ![Python](https://img.shields.io/badge/Python-3.10+-green)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
 ![React](https://img.shields.io/badge/React-18-61dafb)
+---
+
+## 🌐 Live Demo
+
+- **Frontend (Web UI)**: [https://jolly-coast-0d2add31e.5.azurestaticapps.net](https://jolly-coast-0d2add31e.5.azurestaticapps.net)
+- **Orchestrator API**: [https://orchestrator.salmonwave-cfcd5e54.westus2.azurecontainerapps.io](https://orchestrator.salmonwave-cfcd5e54.westus2.azurecontainerapps.io)
+- **RAG Service (Internal)**: `rag-service.internal.salmonwave-cfcd5e54.westus2.azurecontainerapps.io`
 
 ---
 
