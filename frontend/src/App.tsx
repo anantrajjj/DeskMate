@@ -31,12 +31,16 @@ function renderMarkdown(text: string): string {
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
+        // Headers: ### text → <h3>text</h3>
+        .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gm, '<h1>$1</h1>')
         // Bold: **text** → <strong>text</strong>
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         // Italic: _text_ → <em>text</em>
         .replace(/(?:^|\s)_(.+?)_(?:\s|$)/g, ' <em>$1</em> ')
-        // Bullet points: • or - at line start
-        .replace(/^[•\-]\s+(.+)$/gm, '<li>$1</li>')
+        // Bullet points: • or - or * at line start
+        .replace(/^[•\-\*]\s+(.+)$/gm, '<li>$1</li>')
         // Wrap consecutive <li> in <ul>
         .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
         // Line breaks: \n → <br>
